@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pembuat Banner Notifikasi</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#1b2650">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Banner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9edf5;--surface:#fff;--ink:#14213d;--muted:#5b6785;--accent:#2f5bea;--on-accent:#fff;--line:#cfd6e6;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1426;--surface:#1a2038;--ink:#eef1fb;--muted:#9aa5c6;--accent:#8ea6ff;--on-accent:#0f1426;--line:#2c3558;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0f1426;--surface:#1a2038;--ink:#eef1fb;--muted:#9aa5c6;--accent:#8ea6ff;--on-accent:#0f1426;--line:#2c3558;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+main{max-width:30rem;margin:0 auto;padding:1.25rem 1rem 2.5rem}
+h1{font-size:1.6rem;font-weight:800;line-height:1.15;margin:.5rem 0 .25rem;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 1.25rem}
+
+/* Layar kunci pratinjau */
+.screen{border-radius:28px;padding:1.1rem 1rem 1.4rem;background:linear-gradient(160deg,#1b2650,#4a3585 70%,#7a4a8f);color:#fff;overflow:hidden}
+.clock{text-align:center;margin:.4rem 0 1.1rem}
+.clock b{display:block;font-size:3.2rem;font-weight:600;line-height:1;letter-spacing:-.02em}
+.clock span{font-size:.85rem;opacity:.8}
+.banner{display:flex;gap:.7rem;align-items:flex-start;background:rgba(255,255,255,.88);color:#16181f;border-radius:18px;padding:.7rem .8rem;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.banner .ic{flex:none;width:2.3rem;height:2.3rem;border-radius:9px;background:#fff;display:grid;place-items:center;font-size:1.35rem}
+.banner .tx{min-width:0;flex:1}
+.banner .top{display:flex;justify-content:space-between;gap:.5rem;font-size:.72rem;color:#5a5f70}
+.banner .t{font-weight:600;font-size:.95rem;line-height:1.25;overflow-wrap:anywhere}
+.banner .b{font-size:.88rem;line-height:1.3;overflow-wrap:anywhere;white-space:pre-wrap}
+
+/* Formulir */
+form{margin-top:1.25rem;display:grid;gap:.9rem}
+label{display:grid;gap:.3rem;font-weight:600;font-size:.9rem}
+input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:.65rem .8rem;width:100%}
+textarea{min-height:5rem;resize:vertical}
+.row{display:grid;grid-template-columns:5.5rem 1fr;gap:.7rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.chk{display:flex;align-items:center;gap:.6rem;font-weight:400}
+.chk input{width:1.2rem;height:1.2rem;accent-color:var(--accent)}
+:is(input,textarea,select,button):focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btns{display:grid;gap:.6rem;margin-top:.3rem}
+button{font:inherit;font-weight:600;border-radius:14px;padding:.85rem 1rem;border:1.5px solid var(--accent);cursor:pointer}
+.primary{background:var(--accent);color:var(--on-accent)}
+.ghost{background:transparent;color:var(--accent)}
+#status{min-height:2.6rem;color:var(--muted);font-size:.9rem;margin:.2rem 0 0}
+
+/* Banner di dalam halaman */
+#toast{position:fixed;left:.6rem;right:.6rem;top:calc(env(safe-area-inset-top,0px) + .5rem);max-width:28rem;margin:0 auto;z-index:20;transform:translateY(-160%);transition:transform .35s cubic-bezier(.2,.9,.3,1);pointer-events:none}
+#toast.show{transform:none}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Banner notifikasi buatanmu</h1>
+  <p class="lead">Tulis teksnya, lihat pratinjaunya, lalu kirim ke HP.</p>
+
+  <div class="screen" aria-label="Pratinjau layar kunci">
+    <div class="clock"><b id="clk">09:41</b><span id="dt"></span></div>
+    <div class="banner" id="prev"></div>
+  </div>
+
+  <form id="f" autocomplete="off">
+    <div class="row">
+      <label>Ikon<input type="text" id="icon" maxlength="2" value="🔔"></label>
+      <label>Nama aplikasi<input type="text" id="app" maxlength="30" value="Pengingat"></label>
+    </div>
+    <label>Judul<input type="text" id="title" maxlength="60" value="Jangan lupa minum air"></label>
+    <label>Isi pesan<textarea id="body" maxlength="200">Sudah dua jam kamu di depan layar. Ambil gelas dan istirahat sebentar.</textarea></label>
+    <div class="row2">
+      <label>Kirim setelah
+        <select id="delay">
+          <option value="0">Langsung</option>
+          <option value="5" selected>5 detik</option>
+          <option value="10">10 detik</option>
+          <option value="30">30 detik</option>
+        </select>
+      </label>
+      <label class="chk" style="align-self:end;padding-bottom:.7rem"><input type="checkbox" id="vib" checked>Getar</label>
+    </div>
+    <div class="btns">
+      <button type="button" class="primary" id="send">Kirim notifikasi</button>
+      <button type="button" class="ghost" id="test">Coba banner di halaman</button>
+    </div>
+    <p id="status" role="status"></p>
+    <p id="hint" class="lead" hidden></p>
+  </form>
+</main>
+
+<div id="toast" class="banner" aria-hidden="true"></div>
+
+<template id="tpl">
+  <div class="ic"></div>
+  <div class="tx">
+    <div class="top"><span class="a"></span><span>sekarang</span></div>
+    <div class="t"></div>
+    <div class="b"></div>
+  </div>
+</template>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = "notif-banner-v1";
+const fields = ["icon","app","title","body","delay"];
+
+function fill(el){
+  el.replaceChildren($("tpl").content.cloneNode(true));
+  el.querySelector(".ic").textContent = $("icon").value || "🔔";
+  el.querySelector(".a").textContent = $("app").value || "Aplikasi";
+  el.querySelector(".t").textContent = $("title").value || "Judul notifikasi";
+  el.querySelector(".b").textContent = $("body").value;
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(Object.fromEntries(fields.map(k=>[k,$(k).value])))); }catch(e){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || "null");
+    if(d) fields.forEach(k => { if(d[k] != null) $(k).value = d[k]; });
+  }catch(e){}
+}
+function status(t){ $("status").textContent = t; }
+
+function tick(){
+  const n = new Date();
+  $("clk").textContent = n.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",hour12:false}).replace(".",":");
+  $("dt").textContent = n.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
+}
+
+let hide;
+function toast(){
+  const t = $("toast"); fill(t);
+  t.classList.add("show");
+  clearTimeout(hide);
+  hide = setTimeout(()=>t.classList.remove("show"), 4000);
+}
+
+async function ask(){
+  if(!("Notification" in window)) return "unsupported";
+  if(Notification.permission === "default"){
+    try{ return await Notification.requestPermission(); }catch(e){ return "denied"; }
+  }
+  return Notification.permission;
+}
+
+async function getReg(){
+  if(!("serviceWorker" in navigator)) return null;
+  try{
+    return await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(() => r(null), 3000))]);
+  }catch(e){ return null; }
+}
+
+async function fire(){
+  toast();
+  const title = (($("icon").value ? $("icon").value + " " : "") + ($("title").value || "Notifikasi")).trim();
+  const opts = { body: $("body").value, tag: "banner-" + Date.now(), icon: "icon-192.png", badge: "icon-192.png" };
+  if($("vib").checked) opts.vibrate = [200,100,200];
+  try{
+    const reg = await getReg();
+    if(reg){ await reg.showNotification(title, opts); }
+    else { new Notification(title, opts); }
+    status("Notifikasi terkirim.");
+  }catch(e){
+    status("Notifikasi sistem gagal dikirim. Pastikan halaman dibuka lewat HTTPS dan izin notifikasi aktif.");
+  }
+}
+
+$("send").onclick = async () => {
+  const p = await ask();
+  if(p === "unsupported"){ status("Browser ini belum mendukung notifikasi sistem. Hanya banner di halaman yang tampil."); toastLater(); return; }
+  if(p !== "granted"){ status("Izin notifikasi belum diberikan. Aktifkan lewat pengaturan situs di browser, lalu coba lagi."); return; }
+  const d = +$("delay").value;
+  status(d ? "Notifikasi akan muncul dalam " + d + " detik. Kamu bisa mengunci layar." : "Mengirim…");
+  setTimeout(fire, d * 1000);
+};
+function toastLater(){ setTimeout(toast, (+$("delay").value) * 1000); }
+$("test").onclick = () => { toast(); status("Ini hanya pratinjau di dalam halaman."); };
+
+fields.forEach(k => $(k).addEventListener("input", () => { fill($("prev")); save(); }));
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+if(!standalone){
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  $("hint").hidden = false;
+  $("hint").textContent = ios
+    ? "iPhone: ketuk Bagikan, pilih Tambahkan ke Layar Utama, lalu buka aplikasi dari ikonnya. Notifikasi baru bisa aktif dari sana."
+    : "Android: buka menu browser dan pilih Instal aplikasi agar notifikasi berjalan lebih andal.";
+}
+load(); fill($("prev")); tick(); setInterval(tick, 20000);
+</script>
+</body>
+</html>
